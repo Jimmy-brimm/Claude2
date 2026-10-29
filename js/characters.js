@@ -8,10 +8,11 @@
 
   BB.PLAYER_COLORS = ['#ff4d4d', '#3d8bff', '#33c46a', '#ffb81c'];
 
+  // Outlines are drawn at half the requested weight for a lighter, cleaner look.
   function outlineFill(ctx, fill, lw) {
     ctx.fillStyle = fill;
     ctx.fill();
-    ctx.lineWidth = lw;
+    ctx.lineWidth = lw * 0.5;
     ctx.strokeStyle = INK;
     ctx.stroke();
   }
@@ -277,7 +278,7 @@
     }
     if (o.ring) {
       ctx.strokeStyle = o.ring;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.2;
       U.ellipse(ctx, 0, r * 0.76, r * 1.08, r * 0.44);
       ctx.stroke();
     }
@@ -321,7 +322,7 @@
     U.ellipse(ctx, 0, 0, r * 0.95, r * 0.3);
     ctx.fillStyle = ch.inside;
     ctx.fill();
-    ctx.lineWidth = r * 0.11;
+    ctx.lineWidth = r * 0.055;
     ctx.strokeStyle = INK;
     ctx.stroke();
     ch.drawInside(ctx, r);

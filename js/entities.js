@@ -12,18 +12,23 @@
   const TUNE = (BB.TUNE = {
     playerR: 17,
     speed: 235,
-    aimSpeedMul: 0.55,
-    chargeTime: 0.8,
-    meleeActive: 0.17,
-    meleeCooldown: 0.42,
-    meleeCooldownDual: 0.27, // holding two boomerangs speeds up attacks
-    meleeReach: 46,
-    meleeArc: 1.35, // half-angle in radians
-    dashSpeed: 640,
-    dashTime: 0.16,
-    dashCooldown: 0.9,
+    aimSpeedMul: 0.42,
+    chargeTime: 1.0,
+    throwRecover: 0.28, // after a throw you can't swing, dash or throw again for a moment
+    meleeActive: 0.2,
+    meleeCooldown: 0.3,
+    meleeCooldownDual: 0.2, // holding two boomerangs speeds up attacks
+    meleeReach: 56,
+    meleeArc: 1.55, // half-angle in radians
+    lunge: 300, // a slash steps you forward
+    dashSlashLunge: 470, // ...further when you slash out of a dash
+    dashSlashWindow: 0.18, // seconds after a dash that still count as a dash-slash
+    dashSlashReach: 16,
+    dashSpeed: 720,
+    dashTime: 0.17,
+    dashCooldown: 0.55,
     rangR: 11,
-    rangReturnMax: 880,
+    rangReturnMax: 760,
     recallSpeed: 330,
     tkSpeed: 620,
     tkRadius: 300,
@@ -33,7 +38,7 @@
 
   // How far a throw at charge c (0..1) travels before turning back.
   BB.throwPower = (c) => 0.3 + 0.7 * c;
-  BB.throwSpeed = (p) => 620 + 430 * p;
+  BB.throwSpeed = (p) => 520 + 360 * p;
   BB.throwOutTime = (p) => 0.42 + 0.5 * p;
   BB.throwRange = (c) => {
     const p = BB.throwPower(c);
@@ -73,7 +78,7 @@
     ctx.fillStyle = opts.golden ? '#ffd23f' : color;
     ctx.fill();
     ctx.lineJoin = 'round';
-    ctx.lineWidth = Math.max(2, s * 0.17);
+    ctx.lineWidth = Math.max(1.1, s * 0.09);
     ctx.strokeStyle = INK;
     ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.75)';
@@ -93,7 +98,7 @@
       ctx.fillStyle = dot;
       U.ellipse(ctx, 0, -s * 0.28, s * 0.22, s * 0.22);
       ctx.fill();
-      ctx.lineWidth = Math.max(1, s * 0.08);
+      ctx.lineWidth = Math.max(0.8, s * 0.05);
       ctx.strokeStyle = INK;
       ctx.stroke();
     }
@@ -116,7 +121,7 @@
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.strokeStyle = INK;
-    const lw = s * 0.1;
+    const lw = s * 0.065;
     switch (type) {
       case 'caffeinated':
         ctx.fillStyle = '#fff';
@@ -314,7 +319,7 @@
     ctx.translate(x, y);
     ctx.rotate(Math.sin(time * 2) * 0.08);
     ctx.lineJoin = 'round';
-    ctx.lineWidth = s * 0.12;
+    ctx.lineWidth = s * 0.07;
     ctx.strokeStyle = INK;
     // pages
     U.roundRect(ctx, -s * 0.62, -s * 0.72, s * 1.3, s * 1.45, s * 0.12);
@@ -350,7 +355,7 @@
     }
     ctx.closePath();
     ctx.fill();
-    ctx.lineWidth = s * 0.08;
+    ctx.lineWidth = s * 0.05;
     ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     U.roundRect(ctx, s * 0.32, -s * 0.65, s * 0.1, s * 1.1, s * 0.05);
@@ -418,7 +423,11 @@
       this.swingDir = 1;
       this.dashT = 0;
       this.dashCd = 0;
+      this.dashEndT = -99;
       this.dashDir = { x: 0, y: 0 };
+      this.recover = 0;
+      this.lungeT = 0;
+      this.dashSlash = false;
       this.phasing = 0;
       this.falling = false;
       this.fallT = 0;
@@ -461,6 +470,7 @@
       let m = this.has('caffeinated') ? 1.3 : 1;
       if (this.brain) m *= this.brain.d.speed;
       if (this.aiming) m *= TUNE.aimSpeedMul;
+      if (this.recover > 0) m *= 0.6;
       if (this.burning > 0) m *= 1.12;
       return m;
     }
@@ -470,7 +480,7 @@
     }
 
     get meleeReach() {
-      return TUNE.meleeReach;
+      return TUNE.meleeReach + (this.dashSlash ? TUNE.dashSlashReach : 0);
     }
 
     get hidden() {
@@ -491,6 +501,8 @@
       this.dashCd = Math.max(0, this.dashCd - dt);
       this.flash = Math.max(0, this.flash - dt);
       this.stun = Math.max(0, this.stun - dt);
+      this.recover = Math.max(0, this.recover - dt);
+      this.lungeT = Math.max(0, this.lungeT - dt);
       this.squash *= Math.exp(-12 * dt);
       this.blinkT -= dt;
       if (this.blinkT < -0.12) this.blinkT = U.rand(1.5, 4.5);
@@ -529,7 +541,7 @@
 
       // melee
       if (this.meleeT > 0) this.meleeT = Math.max(0, this.meleeT - dt);
-      if (!frozen && cmd.melee && this.held > 0 && this.meleeCd <= 0 && !this.isDecoy) {
+      if (!frozen && cmd.melee && this.held > 0 && this.meleeCd <= 0 && this.recover <= 0 && !this.isDecoy) {
         this.aiming = false;
         this.aimCharge = 0;
         this.meleeT = TUNE.meleeActive;
@@ -537,11 +549,19 @@
         this.meleeHits = new Set();
         this.swingDir = -this.swingDir;
         this.squash = -0.12;
-        if (game.audible) BB.Audio.play('swing');
+        // slashing lunges you forward; out of a dash it becomes a longer, wider dash-slash
+        this.dashSlash = this.dashT > 0 || game.time - this.dashEndT < TUNE.dashSlashWindow;
+        const imp = this.dashSlash ? TUNE.dashSlashLunge : TUNE.lunge;
+        this.dashT = 0;
+        this.vx = Math.cos(this.facing) * imp;
+        this.vy = Math.sin(this.facing) * imp;
+        this.lungeT = 0.12;
+        if (game.audible) BB.Audio.play(this.dashSlash ? 'dashslash' : 'swing');
       }
+      if (this.meleeT <= 0) this.dashSlash = false;
 
       // aim / throw (needs a boomerang in hand and a fresh press)
-      if (!frozen && cmd.aimHeld && this.held > 0 && this.meleeT <= 0 && !this.aimBlock && !this.isDecoy) {
+      if (!frozen && cmd.aimHeld && this.held > 0 && this.meleeT <= 0 && this.recover <= 0 && !this.aimBlock && !this.isDecoy) {
         if (!this.aiming) { this.aiming = true; this.aimCharge = 0; }
         this.aimCharge = Math.min(1, this.aimCharge + dt / TUNE.chargeTime);
       } else if (this.aiming) {
@@ -553,8 +573,11 @@
       this.pullHeld = !frozen && cmd.aimHeld && this.held === 0 && !this.aiming && !this.aimBlock && !this.isDecoy;
 
       // dash (teleport / decoy hook into it)
-      if (this.dashT > 0) this.dashT -= dt;
-      if (!frozen && cmd.dash && this.dashCd <= 0 && this.dashT <= 0) {
+      if (this.dashT > 0) {
+        this.dashT -= dt;
+        if (this.dashT <= 0) this.dashEndT = game.time;
+      }
+      if (!frozen && cmd.dash && this.dashCd <= 0 && this.dashT <= 0 && this.recover <= 0) {
         const cd = TUNE.dashCooldown;
         if (this.has('teleport') && game.teleport(this)) {
           this.dashCd = cd;
@@ -585,6 +608,10 @@
         this.vx = this.dashDir.x * TUNE.dashSpeed;
         this.vy = this.dashDir.y * TUNE.dashSpeed;
         if (Math.random() < 0.5) game.particles.add({ x: this.x, y: this.y + 6, vx: 0, vy: -10, life: 0.25, size: this.r * 0.8, color: U.rgba(this.color, 0.25), type: 'smoke' });
+      } else if (this.lungeT > 0) {
+        const f = Math.exp(-5 * dt);
+        this.vx *= f;
+        this.vy *= f;
       } else {
         const sp = TUNE.speed * this.speedMul;
         const k = this.onSlick ? 1.7 : 16;
@@ -794,6 +821,7 @@
     // Who this boomerang can slice right now.
     canHurt(p, game) {
       if (!this.flying || !p.alive || p.falling || p === this.owner || p.benched) return false;
+      if (p.dashT > 0) return false; // dashing slips past thrown boomerangs
       if (p.isDecoy && p.owner === this.owner) return false;
       return game.canHarm(this.owner, p);
     }

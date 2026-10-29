@@ -316,6 +316,7 @@
         this.rangs.push(new BB.Rang(p, group, x, y, ang, power, curve));
       }
       p.held--;
+      p.recover = TUNE.throwRecover;
       p.stats.throws++;
       p.squash = -0.15;
       if (this.audible) BB.Audio.play('throw');
@@ -431,7 +432,7 @@
       if (r.flying) {
         for (const b of this.bodies()) {
           if (!r.canHurt(b, this) || (r.ignoreT > 0 && r.ignore === b)) continue;
-          if (Math.hypot(b.x - r.x, b.y - 4 - r.y) < b.r + r.r * 0.8) {
+          if (Math.hypot(b.x - r.x, b.y - 4 - r.y) < b.r * 0.8 + r.r * 0.6) {
             this.rangHitBody(r, b);
             if (r.dead || !r.flying) return;
           }
@@ -750,7 +751,8 @@
           this.endRound();
         }
       }
-      if (this.phase === 'playing' && this.roundOver()) this.slowmoT = 1.0;
+      // every death gets a moment of slow motion; the round's last one gets a longer beat
+      if (this.phase === 'playing') this.slowmoT = Math.max(this.slowmoT, this.roundOver() ? 1.0 : 0.55);
       if (this.hooks.onChange) this.hooks.onChange(this);
     }
 
@@ -1028,7 +1030,7 @@
       ctx.save();
       ctx.fillStyle = p.color;
       ctx.strokeStyle = INK;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.3;
       ctx.lineJoin = 'round';
       if (isHuman) {
         ctx.font = '15px "Lilita One", sans-serif';

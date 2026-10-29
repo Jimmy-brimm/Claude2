@@ -31,7 +31,8 @@ Keybinds accept any keyboard key or mouse button and are saved in your browser.
 The rules follow *Boomerang Fu*'s as closely as its public documentation allows:
 
 - **One hit kills.** A slash or a boomerang slices you in half (a Shield absorbs one hit).
-- **Throwing:** hold to charge (longer = further and faster) and release. Moving sideways as you let go curves the throw. The boomerang flies out and comes back to you.
+- **Throwing:** hold to charge (longer = further and faster) and release. Moving sideways as you let go curves the throw. The boomerang flies out and comes back to you. Throwing leaves you briefly open (no slash or dash for a moment).
+- **Close range is king:** a slash lunges you forward and swats boomerangs. Slash out of a dash for a longer, wider dash-slash. Dashing slips past thrown boomerangs, so closing the gap beats spamming throws.
 - **Drops and recall:** a boomerang that hits a wall, or gets swatted by a slash or another boomerang, falls to the floor. Walk over it, or hold throw with empty hands to recall it — you stand still while it floats back over walls, and it can slice anyone in its path.
 - **Hazards:** fall into water or a chasm and you're out. Dashing carries you over gaps.
 - **Scoring (Free for All):** *Most kills* (default): +1 per slice, −1 for killing yourself, no penalty for falling on your own, never below 0. *Last standing*: only the sole survivor scores, one point per round. Ties at the target go to a **tie-breaker round** between the tied players — first slice wins.

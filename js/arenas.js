@@ -127,7 +127,7 @@
           // icicles
           ctx.fillStyle = '#e8f7ff';
           ctx.strokeStyle = INK;
-          ctx.lineWidth = 1.2;
+          ctx.lineWidth = 0.7;
           for (let i = 0; i < 2; i++) {
             if (rng() < 0.4) continue;
             const ix = x + 8 + i * 18 + rng() * 6;
@@ -229,13 +229,13 @@
     U.roundRect(ctx, -16, -26, 32, 36, 10);
     ctx.fillStyle = g;
     ctx.fill();
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 1.6;
     ctx.strokeStyle = INK;
     ctx.stroke();
     U.roundRect(ctx, -16, -12, 32, 12, 2);
     ctx.fillStyle = '#fff4dc';
     ctx.fill();
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
     ctx.fillStyle = '#e2453c';
     ctx.beginPath();
@@ -247,7 +247,7 @@
     U.ellipse(ctx, 0, -27, 17, 7);
     ctx.fillStyle = '#e2453c';
     ctx.fill();
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 1.6;
     ctx.stroke();
     ctx.fillStyle = '#fff';
     for (let i = -2; i <= 2; i++) {
@@ -265,7 +265,7 @@
     ctx.fill();
     ctx.fillStyle = '#7a4b2a';
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 1.4;
     U.roundRect(ctx, -4, -4, 8, 12, 2);
     ctx.fill();
     ctx.stroke();
@@ -284,7 +284,7 @@
       ctx.closePath();
       ctx.fillStyle = t.c;
       ctx.fill();
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 1.4;
       ctx.strokeStyle = INK;
       ctx.lineJoin = 'round';
       ctx.stroke();
@@ -298,7 +298,7 @@
     ctx.fillStyle = 'rgba(80,30,10,0.22)';
     U.ellipse(ctx, 4, 8, 17, 7);
     ctx.fill();
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 1.6;
     ctx.strokeStyle = INK;
     ctx.lineJoin = 'round';
     const green = '#4fb06a';
@@ -336,7 +336,7 @@
     ctx.fill();
     ctx.stroke();
     ctx.strokeStyle = 'rgba(30,80,40,0.5)';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1;
     for (const x of [-3, 3]) {
       ctx.beginPath();
       ctx.moveTo(x, -38);
@@ -345,7 +345,7 @@
     }
     ctx.fillStyle = '#ff6fa5';
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.2;
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * TAU;
       U.ellipse(ctx, Math.cos(a) * 3.5, -44 + Math.sin(a) * 3, 3, 2.4, a);
@@ -651,7 +651,7 @@
       const pits = tiles('~');
       const pc = th.pit;
       ctx.fillStyle = INK;
-      for (const p of pits) { U.roundRect(ctx, p.tx * T - 6, p.ty * T - 6, T + 12, T + 12, 12); ctx.fill(); }
+      for (const p of pits) { U.roundRect(ctx, p.tx * T - 5, p.ty * T - 5, T + 10, T + 10, 11); ctx.fill(); }
       ctx.fillStyle = pc.rim;
       for (const p of pits) { U.roundRect(ctx, p.tx * T - 4, p.ty * T - 4, T + 8, T + 8, 10); ctx.fill(); }
       ctx.fillStyle = pc.rimLine;
@@ -700,7 +700,7 @@
         for (let i = 0; i < 5; i++) {
           ctx.fillStyle = i % 2 ? '#b07a45' : '#c48a50';
           ctx.strokeStyle = INK;
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 0.8;
           if (horizontal) {
             ctx.fillRect(x + i * 8, y + 3, 7, T - 6);
             ctx.strokeRect(x + i * 8, y + 3, 7, T - 6);
@@ -730,7 +730,7 @@
       ctx.fillStyle = INK;
       for (const w of walls) {
         const below = this.tile(w.tx, w.ty + 1) === '#';
-        U.roundRect(ctx, w.tx * T - 3, w.ty * T - E - 3, T + 6, T + (below ? 0 : E) + 6, 6);
+        U.roundRect(ctx, w.tx * T - 1.5, w.ty * T - E - 1.5, T + 3, T + (below ? 0 : E) + 3, 4);
         ctx.fill();
       }
       for (const w of walls) {
@@ -743,7 +743,7 @@
       ctx.fillStyle = INK;
       for (const w of walls) {
         if (this.tile(w.tx, w.ty + 1) === '#') continue;
-        ctx.fillRect(w.tx * T - (this.tile(w.tx - 1, w.ty) === '#' ? 0 : 3), w.ty * T + T - E - 1.5, T + (this.tile(w.tx - 1, w.ty) === '#' ? 0 : 3) + (this.tile(w.tx + 1, w.ty) === '#' ? 0 : 3), 2.5);
+        ctx.fillRect(w.tx * T - (this.tile(w.tx - 1, w.ty) === '#' ? 0 : 1.5), w.ty * T + T - E - 0.6, T + (this.tile(w.tx - 1, w.ty) === '#' ? 0 : 1.5) + (this.tile(w.tx + 1, w.ty) === '#' ? 0 : 1.5), 1.2);
       }
       for (const w of walls) {
         ctx.fillStyle = wc.top;
@@ -785,7 +785,7 @@
       ctx.fillStyle = 'rgba(0,0,0,0.18)';
       for (const b of blobs) { U.ellipse(ctx, b.x + 4, b.y + 10, b.r, b.r * 0.8); ctx.fill(); }
       ctx.fillStyle = INK;
-      for (const b of blobs) { U.ellipse(ctx, b.x, b.y, b.r + 3, b.r + 3); ctx.fill(); }
+      for (const b of blobs) { U.ellipse(ctx, b.x, b.y, b.r + 1.5, b.r + 1.5); ctx.fill(); }
       ctx.fillStyle = bc.dark;
       for (const b of blobs) { U.ellipse(ctx, b.x, b.y, b.r, b.r); ctx.fill(); }
       ctx.fillStyle = bc.mid;

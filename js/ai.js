@@ -6,21 +6,23 @@
   const T = BB.TILE;
 
   // aimHold: how long a bot visibly winds up before releasing a throw (seconds)
+  // aimLag: how far behind a moving target the bot's aim trails (seconds of smoothing)
+  // aggression: chance to dash-slash in even when the target is armed
   const DIFF = (BB.BOT_DIFFICULTY = {
     easy: {
-      label: 'Easy', react: 0.7, aimErr: 0.4, lead: 0, dodge: 0.1, deflect: 0,
-      throwCd: [3.0, 5.0], aimHold: [0.7, 1.1], speed: 0.78, detect: 60, chargeErr: 0.3, meleeWind: 0.6,
-      kite: 140, jitter: 0.55, rushDash: 0, maxRange: 380, recall: 0.4,
+      label: 'Easy', react: 0.7, aimErr: 0.55, aimLag: 0.5, lead: 0, dodge: 0.1, deflect: 0,
+      throwCd: [3.5, 5.5], aimHold: [0.7, 1.1], speed: 0.78, detect: 60, chargeErr: 0.35, meleeWind: 0.55,
+      kite: 120, jitter: 0.55, rushDash: 0.15, aggression: 0.1, maxRange: 340, recall: 0.4,
     },
     normal: {
-      label: 'Normal', react: 0.32, aimErr: 0.14, lead: 0.55, dodge: 0.45, deflect: 0.15,
-      throwCd: [1.8, 3.0], aimHold: [0.45, 0.75], speed: 0.93, detect: 100, chargeErr: 0.15, meleeWind: 0.22,
-      kite: 170, jitter: 0.25, rushDash: 0.25, maxRange: 500, recall: 0.7,
+      label: 'Normal', react: 0.34, aimErr: 0.28, aimLag: 0.3, lead: 0.3, dodge: 0.4, deflect: 0.1,
+      throwCd: [2.2, 3.6], aimHold: [0.45, 0.75], speed: 0.93, detect: 100, chargeErr: 0.22, meleeWind: 0.2,
+      kite: 120, jitter: 0.25, rushDash: 0.5, aggression: 0.3, maxRange: 420, recall: 0.7,
     },
     hard: {
-      label: 'Hard', react: 0.16, aimErr: 0.05, lead: 1, dodge: 0.8, deflect: 0.4,
-      throwCd: [1.1, 2.0], aimHold: [0.3, 0.5], speed: 1, detect: 150, chargeErr: 0.07, meleeWind: 0.1,
-      kite: 200, jitter: 0.08, rushDash: 0.6, maxRange: 580, recall: 0.9,
+      label: 'Hard', react: 0.2, aimErr: 0.15, aimLag: 0.18, lead: 0.6, dodge: 0.7, deflect: 0.25,
+      throwCd: [1.5, 2.6], aimHold: [0.35, 0.55], speed: 1, detect: 150, chargeErr: 0.12, meleeWind: 0.1,
+      kite: 110, jitter: 0.1, rushDash: 0.9, aggression: 0.55, maxRange: 480, recall: 0.9,
     },
   });
 
@@ -240,7 +242,16 @@
         const dx = t.x - p.x, dy = t.y - p.y;
         const dist = Math.hypot(dx, dy);
         const los = arena.lineClear(p.x, p.y, t.x, t.y, 4);
-        const toT = Math.atan2(dy, dx);
+        // the bot's aim trails behind where the target really is
+        if (!this.track || this.trackOf !== t) {
+          this.track = { x: t.x, y: t.y };
+          this.trackOf = t;
+        } else {
+          const k = 1 - Math.exp(-dt / d.aimLag);
+          this.track.x += (t.x - this.track.x) * k;
+          this.track.y += (t.y - this.track.y) * k;
+        }
+        const toT = Math.atan2(this.track.y - p.y, this.track.x - p.x);
         if (!this.pendingDeflect) cmd.aim = toT;
 
         if (p.hasRang) {
@@ -260,14 +271,14 @@
             // keep winding up, tracking the target, then let go
             this.aimT += dt;
             cmd.aimHeld = this.aimT < this.aimDur;
-            const lead = (dist / 700) * d.lead;
-            const px = t.x + t.vx * lead, py = t.y + t.vy * lead;
+            const lead = (dist / 600) * d.lead;
+            const px = this.track.x + t.vx * lead, py = this.track.y + t.vy * lead;
             cmd.aim = Math.atan2(py - p.y, px - p.x) + this.aimErr;
             if (!cmd.aimHeld) {
               this.throwCd = U.rand(d.throwCd[0], d.throwCd[1]);
               this.releasing = true; // plant feet on release so the throw flies straight
             }
-          } else if (los && dist > 70 && dist < d.maxRange && this.throwCd <= 0 && this.meleeWind < 0 &&
+          } else if (los && dist > 140 && dist < d.maxRange && this.throwCd <= 0 && this.meleeWind < 0 &&
                      !(p.has('explosive') && dist < 170)) {
             const want = dist + 40;
             let c = 0;
@@ -284,10 +295,13 @@
             const towards = { x: dx / (dist || 1), y: dy / (dist || 1) };
             let keep = t.hasRang ? d.kite : 0;
             if (p.has('explosive')) keep = Math.max(keep, 180);
-            if (!t.hasRang && dist < 220 && p.dashCd <= 0 && Math.random() < d.rushDash * dt * 3 && los &&
-                this.safeStep(game, towards.x, towards.y, 100)) {
+            // close the gap with a dash and slash out of it
+            if (dist < 210 && dist > 60 && p.dashCd <= 0 && p.meleeCd <= 0 && los &&
+                (!t.hasRang || Math.random() < d.aggression) && Math.random() < d.rushDash * dt * 3 &&
+                this.safeStep(game, towards.x, towards.y, 110)) {
               cmd.dash = true;
               cmd.mx = towards.x; cmd.my = towards.y;
+              this.meleeWind = U.rand(0.04, 0.12);
               return cmd;
             }
             if (!los || dist > 430) {
