@@ -515,3 +515,47 @@ body {
   position: absolute; right: 0.5em; bottom: 0.4em; z-index: 20;
   font-family: monospace; font-size: 0.8em; color: #fff; background: rgba(0, 0, 0, 0.4); padding: 0.1em 0.4em; border-radius: 0.3em;
 }
+
+/* ---------- rules / teams / awards ---------- */
+.rules-btn { font-size: 1.15em !important; margin-top: 0 !important; }
+.match-settings { gap: 1.6em; }
+.select-warning { height: 1.4em; margin-top: 0.5em; font-family: var(--display); font-size: 1.2em; color: #fff; text-shadow: 0 0.08em 0 var(--ink); }
+.slot-head.team { cursor: pointer; }
+.slot-head.team::after { content: " ⇄"; opacity: 0.8; font-size: 0.8em; }
+.rules-grid { display: flex; gap: 1.4em; align-items: flex-start; }
+.rules-panel { width: 27em; }
+.rules-panel.wide { width: 36em; }
+.rules-panel .toggle-row .pills { font-size: 0.85em; }
+.rules-panel .pills button.sel { background: var(--yellow); }
+#pu-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35em 0.8em; }
+.pu-toggle {
+  display: flex; align-items: center; gap: 0.5em;
+  border: 0.12em solid var(--ink); border-radius: 0.8em; padding: 0.2em 0.6em 0.2em 0.25em;
+  background: #f1ecf8; cursor: pointer; font-family: var(--display); font-size: 0.95em; text-align: left; color: var(--ink);
+  opacity: 0.55;
+}
+.pu-toggle.on { background: #fff; opacity: 1; box-shadow: 0 0.15em 0 var(--ink); }
+.pu-toggle canvas { width: 2.1em; height: 2.1em; flex: none; }
+.pu-actions { display: flex; gap: 0.6em; }
+.score-card .sc-pus { position: absolute; left: 50%; transform: translateX(-50%); bottom: -1.25em; display: flex; gap: 0.1em; }
+.score-card .sc-pus canvas { width: 1.3em; height: 1.3em; }
+#hud-teams { position: absolute; top: 0.6em; display: flex; justify-content: space-between; left: 1em; right: 1em; pointer-events: none; }
+.team-score {
+  font-family: var(--display); font-size: 1.5em; color: #fff; padding: 0.1em 0.7em;
+  border: 0.13em solid var(--ink); border-radius: 0.8em; box-shadow: 0 0.15em 0 var(--ink);
+}
+#hud-goal { top: 4.9em; }
+.vr { flex-direction: column; padding: 0.4em 0.8em; gap: 0.2em; }
+.vr-top { display: flex; align-items: center; gap: 0.4em; }
+.awards { display: flex; flex-direction: column; gap: 0.15em; }
+.award { font-family: var(--body); font-weight: 600; font-size: 0.72em; background: #fff3c4; border: 0.1em solid var(--ink); border-radius: 0.6em; padding: 0 0.4em; white-space: nowrap; }
+.award.bad { background: #ffd9de; }
+.round-team { font-family: var(--display); font-size: 1.1em; }
+
+/* how-to: 12 power-ups in a compact two-column grid */
+.howto-grid .howto-panel { width: 21em; }
+.howto-grid .howto-panel:last-child { width: 33em; }
+.powerup-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15em 0.8em; font-size: 0.82em; }
+.powerup-list li { padding: 0.15em 0; align-items: flex-start; }
+.powerup-list canvas { width: 2.3em; height: 2.3em; }
+.powerup-list b { font-size: 1.05em; }

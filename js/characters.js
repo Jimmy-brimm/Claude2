@@ -8,10 +8,11 @@
 
   BB.PLAYER_COLORS = ['#ff4d4d', '#3d8bff', '#33c46a', '#ffb81c'];
 
+  // Outlines are drawn at half the requested weight for a lighter, cleaner look.
   function outlineFill(ctx, fill, lw) {
     ctx.fillStyle = fill;
     ctx.fill();
-    ctx.lineWidth = lw;
+    ctx.lineWidth = lw * 0.5;
     ctx.strokeStyle = INK;
     ctx.stroke();
   }
@@ -277,7 +278,7 @@
     }
     if (o.ring) {
       ctx.strokeStyle = o.ring;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.2;
       U.ellipse(ctx, 0, r * 0.76, r * 1.08, r * 0.44);
       ctx.stroke();
     }
@@ -288,11 +289,25 @@
       outlineFill(ctx, ch.feet, r * 0.08);
     }
     ctx.translate(0, -bob - r * 0.12);
+    // o.back / o.front draw arms and held items around the body, in body-local coordinates
+    if (o.back) o.back(ctx);
+    ctx.save();
     const sq = o.squash || 0;
     ctx.scale(1 + sq, 1 - sq);
     ch.drawBody(ctx, r);
     drawFace(ctx, ch, r, o);
     ctx.restore();
+    if (o.front) o.front(ctx);
+    ctx.restore();
+  };
+
+  // A little round hand in the character's limb colour.
+  BB.drawHand = function (ctx, ch, x, y, r) {
+    U.ellipse(ctx, x, y, r * 0.24, r * 0.22);
+    outlineFill(ctx, ch.feet, r * 0.08);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    U.ellipse(ctx, x - r * 0.06, y - r * 0.07, r * 0.08, r * 0.05);
+    ctx.fill();
   };
 
   // One half of a sliced fighter, cut along its local x-axis. side -1 = top half, 1 = bottom half.
@@ -307,7 +322,7 @@
     U.ellipse(ctx, 0, 0, r * 0.95, r * 0.3);
     ctx.fillStyle = ch.inside;
     ctx.fill();
-    ctx.lineWidth = r * 0.11;
+    ctx.lineWidth = r * 0.055;
     ctx.strokeStyle = INK;
     ctx.stroke();
     ch.drawInside(ctx, r);

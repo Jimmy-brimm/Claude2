@@ -101,6 +101,10 @@
         case 'swing':
           this.noise(0.14, { f0: 2400, f1: 900, q: 1.5, vol: 0.32 });
           break;
+        case 'dashslash':
+          this.noise(0.2, { f0: 3200, f1: 700, q: 1.2, vol: 0.4 });
+          this.tone(320, 0.12, { type: 'triangle', to: 160, vol: 0.12 });
+          break;
         case 'catch':
           this.tone(v(880), 0.09, { type: 'triangle', vol: 0.18 });
           this.tone(v(1320), 0.12, { type: 'triangle', vol: 0.14, delay: 0.05 });
@@ -135,6 +139,10 @@
         case 'shield':
           this.tone(900, 0.3, { type: 'sine', to: 300, vol: 0.25 });
           this.noise(0.2, { f0: 3000, q: 4, vol: 0.15 });
+          break;
+        case 'ignite':
+          this.noise(0.5, { filter: 'lowpass', f0: 600, f1: 2400, vol: 0.35 });
+          this.tone(220, 0.3, { type: 'sawtooth', to: 440, vol: 0.05 });
           break;
         case 'explode':
           this.noise(0.9, { filter: 'lowpass', f0: 2000, f1: 80, vol: 0.8 });

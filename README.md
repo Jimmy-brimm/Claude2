@@ -18,20 +18,35 @@ Runs fully offline in the browser against bots. No build step, no dependencies: 
 | Action | Default |
 | --- | --- |
 | Move | `W` `A` `S` `D` |
-| Swing (melee slash, also deflects boomerangs) | Left mouse button |
-| Aim & throw — hold to aim/charge, release to throw | Right mouse button (hold) |
+| Swing (slash; also swats boomerangs out of the air) | Left mouse button |
+| Charge & throw — hold to charge, release to throw | Right mouse button (hold) |
+| Recall a dropped boomerang (empty-handed) | Right mouse button (hold) |
 | Dash | `Space` |
 | Pause | `Esc` |
 
 Keybinds accept any keyboard key or mouse button and are saved in your browser.
 
+## Rules
+
+The rules follow *Boomerang Fu*'s as closely as its public documentation allows:
+
+- **One hit kills.** A slash or a boomerang slices you in half (a Shield absorbs one hit).
+- **Throwing:** hold to charge (longer = further and faster) and release. Moving sideways as you let go curves the throw. The boomerang flies out and comes back to you. Throwing leaves you briefly open (no slash or dash for a moment).
+- **Close range is king:** a slash lunges you forward and swats boomerangs. Slash out of a dash for a longer, wider dash-slash. Dashing slips past thrown boomerangs, so closing the gap beats spamming throws.
+- **Drops and recall:** a boomerang that hits a wall, or gets swatted by a slash or another boomerang, falls to the floor. Walk over it, or hold throw with empty hands to recall it — you stand still while it floats back over walls, and it can slice anyone in its path.
+- **Hazards:** fall into water or a chasm and you're out. Dashing carries you over gaps.
+- **Scoring (Free for All):** *Most kills* (default): +1 per slice, −1 for killing yourself, no penalty for falling on your own, never below 0. *Last standing*: only the sole survivor scores, one point per round. Ties at the target go to a **tie-breaker round** between the tied players — first slice wins.
+- **Teams:** 2 teams; the last team standing scores. Friendly fire is optional.
+- **Power-ups** come from blue books. They last the whole match; you can hold 3 at once (plus a Shield) and a 4th replaces your oldest. Fire and Ice cancel each other. Spawn rate (Off / 0.5x / 1x / 2x) and every power-up can be toggled under *Rules*.
+- **Match awards** (Sharpshooter, Sniper, Butterfingers…) are shown on the victory screen.
+
 ## Features
 
-- **4 fighters:** Bao, Kiwi, Macaron and Radish — each gets sliced in half with its own filling.
+- **4 fighters:** Bao, Kiwi, Macaron and Radish — each gets sliced in half with its own filling. Fighters hold their boomerangs with little hands, wind up to throw and swing them like blades.
 - **3 arenas:** Sunny Kitchen (oil spills around a sink), Frosty Glade (slippery pond with ice holes), Sunset Canyon (bottomless chasm with two bridges). Pick one or shuffle every round.
-- **Bots with 3 difficulties:** Easy, Normal and Hard — set per bot or for all at once. Add or remove bots for 1v1 up to free-for-all with 4.
-- **5 power-ups:** Multi-Rang, Kaboom-Rang, Bubble Shield, Turbo and Big Rang.
-- Bushes to hide in, dashing, deflecting, boomerang clashes, slow-mo final kills, score screens and a victory podium.
+- **Bots with 3 difficulties:** Easy, Normal and Hard — set per bot or for all at once. They charge their throws visibly, recall dropped boomerangs, dodge and swat.
+- **12 power-ups:** Caffeinated, Dash Through Walls, Teleport, Explosive Boomerang, Multi Boomerang, Fire Boomerang, Ice Boomerang, Disguise, Shield, Telekinesis, Decoy and Extra Boomerang.
+- Bushes to hide in, slow-mo final kills, score screens and a victory podium.
 - Settings for keybinds, sound/music volume, screen shake, aim guide and an FPS counter.
 
 ## Project layout
