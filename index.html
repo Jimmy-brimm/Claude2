@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Boomerang Bites</title>
+  <meta name="description" content="A chaotic top-down boomerang brawler with snack-sized fighters. Play offline against bots right in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" width="1280" height="720"></canvas>
+
+    <!-- In-game HUD -->
+    <div id="hud" class="hidden">
+      <div id="hud-scores"></div>
+      <div id="hud-goal"></div>
+      <div id="hud-hint"></div>
+    </div>
+
+    <!-- Title -->
+    <section id="screen-title" class="screen">
+      <div class="title-shade"></div>
+      <div class="logo">
+        <div class="logo-rang"></div>
+        <h1><span class="l1">Boomerang</span><span class="l2">Bites</span></h1>
+      </div>
+      <nav class="menu">
+        <button class="btn big" data-go="select">Play</button>
+        <button class="btn" data-go="howto">How to Play</button>
+        <button class="btn" data-go="settings">Settings</button>
+      </nav>
+      <div class="footer-note">Offline · 1 player vs bots · Hold <b class="kb" data-bind="throw"></b> to aim, <b class="kb" data-bind="melee"></b> to swing</div>
+    </section>
+
+    <!-- Character / player select -->
+    <section id="screen-select" class="screen hidden">
+      <div class="screen-bg"></div>
+      <h2 class="screen-title">Choose Your Snack</h2>
+      <div id="slots"></div>
+      <div class="match-settings panel">
+        <div class="ms-item">
+          <span class="ms-label">Points to win</span>
+          <div class="stepper" id="points-stepper">
+            <button class="step-btn" data-dir="-1">◀</button>
+            <span class="step-val" id="points-val">5</span>
+            <button class="step-btn" data-dir="1">▶</button>
+          </div>
+        </div>
+        <div class="ms-item">
+          <span class="ms-label">Power-ups</span>
+          <button class="toggle" id="toggle-powerups">On</button>
+        </div>
+        <div class="ms-item">
+          <span class="ms-label">All bots</span>
+          <div class="pills" id="all-diff">
+            <button data-diff="easy">Easy</button><button data-diff="normal">Normal</button><button data-diff="hard">Hard</button>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <button class="btn back" data-go="title">Back</button>
+        <button class="btn go" data-go="arena">Next ▶</button>
+      </div>
+    </section>
+
+    <!-- Arena select -->
+    <section id="screen-arena" class="screen hidden">
+      <div class="screen-bg"></div>
+      <h2 class="screen-title">Pick an Arena</h2>
+      <div id="arena-cards"></div>
+      <div class="bottom-bar">
+        <button class="btn back" data-go="select">Back</button>
+        <button class="btn go" id="btn-fight">Fight!</button>
+      </div>
+    </section>
+
+    <!-- How to play -->
+    <section id="screen-howto" class="screen hidden">
+      <div class="screen-bg"></div>
+      <h2 class="screen-title">How to Play</h2>
+      <div class="howto-grid">
+        <div class="panel howto-panel">
+          <h3>Controls</h3>
+          <ul class="controls-list" id="howto-controls"></ul>
+          <p class="tip">Keys can be changed in <b>Settings</b>.</p>
+        </div>
+        <div class="panel howto-panel">
+          <h3>Rules</h3>
+          <ul class="rules">
+            <li>One hit and you're <b>sliced</b>. Every slice scores a point.</li>
+            <li><b>Tap</b> your swing button for a close-range slash. Slashes also <b>deflect</b> boomerangs!</li>
+            <li><b>Hold</b> aim to charge a throw — the longer you hold, the further it flies. It comes back to you, so catch it!</li>
+            <li>No boomerang, no attacks. Pick it up if it lands.</li>
+            <li>Dash to dodge. Hide in bushes. Don't fall in the water or the chasm.</li>
+            <li>First to the target score wins the match.</li>
+          </ul>
+        </div>
+        <div class="panel howto-panel">
+          <h3>Power-ups</h3>
+          <ul class="powerup-list" id="howto-powerups"></ul>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <button class="btn back" data-go="title">Back</button>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="screen-settings" class="screen hidden">
+      <div class="screen-bg"></div>
+      <h2 class="screen-title">Settings</h2>
+      <div class="settings-grid">
+        <div class="panel settings-panel">
+          <h3>Key Bindings</h3>
+          <p class="tip">Click a binding, then press any key or mouse button. <span class="muted">(Esc cancels)</span></p>
+          <div id="bind-list"></div>
+          <button class="btn small" id="btn-reset-binds">Reset Controls</button>
+        </div>
+        <div class="panel settings-panel">
+          <h3>Audio</h3>
+          <label class="slider-row">Sound effects <input type="range" min="0" max="100" id="vol-sfx"><span id="vol-sfx-val"></span></label>
+          <label class="slider-row">Music <input type="range" min="0" max="100" id="vol-music"><span id="vol-music-val"></span></label>
+          <h3>Gameplay</h3>
+          <div class="toggle-row"><span>Screen shake</span><button class="toggle" id="opt-shake">On</button></div>
+          <div class="toggle-row"><span>Aim guide</span><button class="toggle" id="opt-aim">On</button></div>
+          <div class="toggle-row"><span>Show FPS</span><button class="toggle" id="opt-fps">Off</button></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <button class="btn back" id="btn-settings-back">Back</button>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section id="overlay-pause" class="overlay hidden">
+      <div class="panel pause-panel">
+        <h2>Paused</h2>
+        <button class="btn" id="btn-resume">Resume</button>
+        <button class="btn" id="btn-restart">Restart Match</button>
+        <button class="btn" id="btn-pause-settings">Settings</button>
+        <button class="btn back" id="btn-quit">Quit to Menu</button>
+      </div>
+    </section>
+
+    <!-- Round results -->
+    <section id="overlay-round" class="overlay hidden">
+      <div class="panel round-panel">
+        <h2 id="round-title">Round 1</h2>
+        <div id="round-sub"></div>
+        <div id="round-rows"></div>
+        <div class="round-foot">Next round starting… <span class="muted">(click to skip)</span></div>
+      </div>
+    </section>
+
+    <!-- Victory -->
+    <section id="overlay-victory" class="overlay hidden">
+      <div class="confetti" id="confetti"></div>
+      <div class="victory-wrap">
+        <canvas id="victory-portrait" width="320" height="320"></canvas>
+        <h2 id="victory-title">Bao Wins!</h2>
+        <div id="victory-rank"></div>
+        <div class="victory-buttons">
+          <button class="btn go" id="btn-rematch">Rematch</button>
+          <button class="btn" id="btn-change">Change Setup</button>
+          <button class="btn back" id="btn-menu">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="fps" class="hidden"></div>
+  </div>
+
+  <script src="js/util.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="js/arenas.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
