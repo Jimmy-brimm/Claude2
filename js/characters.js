@@ -288,11 +288,25 @@
       outlineFill(ctx, ch.feet, r * 0.08);
     }
     ctx.translate(0, -bob - r * 0.12);
+    // o.back / o.front draw arms and held items around the body, in body-local coordinates
+    if (o.back) o.back(ctx);
+    ctx.save();
     const sq = o.squash || 0;
     ctx.scale(1 + sq, 1 - sq);
     ch.drawBody(ctx, r);
     drawFace(ctx, ch, r, o);
     ctx.restore();
+    if (o.front) o.front(ctx);
+    ctx.restore();
+  };
+
+  // A little round hand in the character's limb colour.
+  BB.drawHand = function (ctx, ch, x, y, r) {
+    U.ellipse(ctx, x, y, r * 0.24, r * 0.22);
+    outlineFill(ctx, ch.feet, r * 0.08);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    U.ellipse(ctx, x - r * 0.06, y - r * 0.07, r * 0.08, r * 0.05);
+    ctx.fill();
   };
 
   // One half of a sliced fighter, cut along its local x-axis. side -1 = top half, 1 = bottom half.

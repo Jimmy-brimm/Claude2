@@ -16,6 +16,7 @@
 
     <!-- In-game HUD -->
     <div id="hud" class="hidden">
+      <div id="hud-teams" class="hidden"></div>
       <div id="hud-scores"></div>
       <div id="hud-goal"></div>
       <div id="hud-hint"></div>
@@ -43,6 +44,12 @@
       <div id="slots"></div>
       <div class="match-settings panel">
         <div class="ms-item">
+          <span class="ms-label">Mode</span>
+          <div class="pills" id="mode-pills">
+            <button data-mode="ffa">Free for All</button><button data-mode="teams">Teams</button>
+          </div>
+        </div>
+        <div class="ms-item">
           <span class="ms-label">Points to win</span>
           <div class="stepper" id="points-stepper">
             <button class="step-btn" data-dir="-1">◀</button>
@@ -51,19 +58,17 @@
           </div>
         </div>
         <div class="ms-item">
-          <span class="ms-label">Power-ups</span>
-          <button class="toggle" id="toggle-powerups">On</button>
-        </div>
-        <div class="ms-item">
           <span class="ms-label">All bots</span>
           <div class="pills" id="all-diff">
             <button data-diff="easy">Easy</button><button data-diff="normal">Normal</button><button data-diff="hard">Hard</button>
           </div>
         </div>
+        <button class="btn small rules-btn" data-go="rules">⚙ Rules</button>
       </div>
+      <div class="select-warning" id="select-warning"></div>
       <div class="bottom-bar">
         <button class="btn back" data-go="title">Back</button>
-        <button class="btn go" data-go="arena">Next ▶</button>
+        <button class="btn go" id="btn-next">Next ▶</button>
       </div>
     </section>
 
@@ -75,6 +80,35 @@
       <div class="bottom-bar">
         <button class="btn back" data-go="select">Back</button>
         <button class="btn go" id="btn-fight">Fight!</button>
+      </div>
+    </section>
+
+    <!-- Match rules (modifiers) -->
+    <section id="screen-rules" class="screen hidden">
+      <div class="screen-bg"></div>
+      <h2 class="screen-title">Match Rules</h2>
+      <div class="rules-grid">
+        <div class="panel rules-panel">
+          <h3>Scoring</h3>
+          <div class="toggle-row"><span>Win condition</span>
+            <div class="pills" id="win-pills"><button data-win="kills">Most kills</button><button data-win="last">Last standing</button></div>
+          </div>
+          <p class="tip" id="win-tip"></p>
+          <div class="toggle-row"><span>Friendly fire <span class="muted">(teams)</span></span><button class="toggle" id="opt-ff">Off</button></div>
+          <h3>Power-ups</h3>
+          <div class="toggle-row"><span>Spawn rate</span>
+            <div class="pills" id="rate-pills"><button data-rate="0">Off</button><button data-rate="0.5">0.5x</button><button data-rate="1">1x</button><button data-rate="2">2x</button></div>
+          </div>
+          <p class="tip">Grab the blue books for a random power-up. Power-ups last the whole match; you can hold 3 at once (plus a Shield) and a 4th replaces your oldest.</p>
+        </div>
+        <div class="panel rules-panel wide">
+          <h3>Enabled power-ups</h3>
+          <div id="pu-toggles"></div>
+          <div class="pu-actions"><button class="btn small" id="pu-all">All on</button><button class="btn small back" id="pu-none">All off</button></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <button class="btn back" data-go="select">Back</button>
       </div>
     </section>
 
@@ -91,12 +125,12 @@
         <div class="panel howto-panel">
           <h3>Rules</h3>
           <ul class="rules">
-            <li>One hit and you're <b>sliced</b>. Every slice scores a point.</li>
-            <li><b>Tap</b> your swing button for a close-range slash. Slashes also <b>deflect</b> boomerangs!</li>
-            <li><b>Hold</b> aim to charge a throw — the longer you hold, the further it flies. It comes back to you, so catch it!</li>
-            <li>No boomerang, no attacks. Pick it up if it lands.</li>
-            <li>Dash to dodge. Hide in bushes. Don't fall in the water or the chasm.</li>
-            <li>First to the target score wins the match.</li>
+            <li>One hit and you're <b>sliced</b>. Each slice is a point; slicing yourself or a teammate costs one.</li>
+            <li><b>Tap</b> swing for a slash. Slashes also <b>swat</b> boomerangs out of the air.</li>
+            <li><b>Hold</b> throw to charge, release to throw. Move sideways as you let go to <b>curve</b> it.</li>
+            <li>It flies back to you. If it hits a wall it <b>drops</b> — walk over it, or <b>hold throw</b> empty-handed to recall it.</li>
+            <li>Dash to dodge and to hop gaps. Hide in bushes. Don't fall in!</li>
+            <li>First to the target score wins. Ties go to a tie-breaker: first slice wins.</li>
           </ul>
         </div>
         <div class="panel howto-panel">

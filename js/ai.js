@@ -5,21 +5,22 @@
   const U = BB.util;
   const T = BB.TILE;
 
+  // aimHold: how long a bot visibly winds up before releasing a throw (seconds)
   const DIFF = (BB.BOT_DIFFICULTY = {
     easy: {
       label: 'Easy', react: 0.7, aimErr: 0.4, lead: 0, dodge: 0.1, deflect: 0,
-      throwCd: [2.4, 4.0], speed: 0.75, detect: 60, chargeErr: 0.4, meleeWind: 0.6,
-      kite: 140, jitter: 0.55, rushDash: 0, maxRange: 380,
+      throwCd: [3.0, 5.0], aimHold: [0.7, 1.1], speed: 0.78, detect: 60, chargeErr: 0.3, meleeWind: 0.6,
+      kite: 140, jitter: 0.55, rushDash: 0, maxRange: 380, recall: 0.4,
     },
     normal: {
-      label: 'Normal', react: 0.3, aimErr: 0.13, lead: 0.55, dodge: 0.45, deflect: 0.15,
-      throwCd: [1.0, 1.9], speed: 0.93, detect: 100, chargeErr: 0.18, meleeWind: 0.22,
-      kite: 170, jitter: 0.25, rushDash: 0.25, maxRange: 520,
+      label: 'Normal', react: 0.32, aimErr: 0.14, lead: 0.55, dodge: 0.45, deflect: 0.15,
+      throwCd: [1.8, 3.0], aimHold: [0.45, 0.75], speed: 0.93, detect: 100, chargeErr: 0.15, meleeWind: 0.22,
+      kite: 170, jitter: 0.25, rushDash: 0.25, maxRange: 500, recall: 0.7,
     },
     hard: {
-      label: 'Hard', react: 0.14, aimErr: 0.045, lead: 1, dodge: 0.8, deflect: 0.45,
-      throwCd: [0.45, 1.0], speed: 1, detect: 150, chargeErr: 0.07, meleeWind: 0.08,
-      kite: 200, jitter: 0.08, rushDash: 0.7, maxRange: 600,
+      label: 'Hard', react: 0.16, aimErr: 0.05, lead: 1, dodge: 0.8, deflect: 0.4,
+      throwCd: [1.1, 2.0], aimHold: [0.3, 0.5], speed: 1, detect: 150, chargeErr: 0.07, meleeWind: 0.1,
+      kite: 200, jitter: 0.08, rushDash: 0.6, maxRange: 580, recall: 0.9,
     },
   });
 
@@ -124,7 +125,7 @@
       this.repathT = 0;
       this.target = null;
       this.retargetT = 0;
-      this.throwCd = U.rand(this.d.throwCd[0], this.d.throwCd[1]) * 0.6;
+      this.throwCd = U.rand(this.d.throwCd[0], this.d.throwCd[1]) * 0.5;
       this.aimT = 0;
       this.aimDur = 0;
       this.aimErr = 0;
@@ -143,6 +144,8 @@
       this.strafeT = U.rand(0.8, 2.2);
       this.wander = null;
       this.jitterA = 0;
+      this.wantsRecall = Math.random() < this.d.recall;
+      this.decoyT = 0.8;
     }
 
     think(game, dt) {
@@ -152,6 +155,7 @@
         cmd.aim = Math.atan2(BB.H / 2 - p.y, BB.W / 2 - p.x);
         return cmd;
       }
+      if (p.isDecoy) return this.decoyThink(game, dt, cmd);
       this.throwCd -= dt;
       this.retargetT -= dt;
       this.repathT -= dt;
@@ -160,6 +164,9 @@
       this.strafeT -= dt;
       if (this.strafeT <= 0) { this.strafe = -this.strafe; this.strafeT = U.rand(0.7, 2.2); }
       this.jitterA += U.rand(-3, 3) * dt;
+
+      const arena = game.arena;
+      const enemies = game.bodies().filter((q) => q !== p && q.owner !== p && !game.isAlly(p, q) && game.canHarm(p, q));
 
       // --- react to incoming boomerangs -----------------------------------
       const threat = this.findThreat(game);
@@ -176,11 +183,8 @@
         }
       }
 
-      const arena = game.arena;
-      const enemies = game.players.filter((q) => q !== p && q.alive && !q.falling);
       let move = null;
 
-      // pending deflection swing: wait until the rang is in reach
       if (this.pendingDeflect) {
         const r = this.pendingDeflect.rang;
         this.pendingDeflect.t -= dt;
@@ -204,12 +208,26 @@
         return cmd;
       }
 
-      if (this.unstickT > 0) {
-        move = this.unstick;
-      } else if (this.dodgeT > 0) {
-        move = this.dodge;
-      } else if (!p.hasRang) {
-        move = this.fetchRang(game, enemies);
+      // on fire: nothing to lose, charge the nearest enemy and share the flames
+      if (p.burning > 0 && enemies.length) {
+        const q = enemies.reduce((a, b) => (Math.hypot(a.x - p.x, a.y - p.y) < Math.hypot(b.x - p.x, b.y - p.y) ? a : b));
+        cmd.aim = Math.atan2(q.y - p.y, q.x - p.x);
+        move = this.goTo(game, q.x, q.y);
+        if (move && Math.hypot(q.x - p.x, q.y - p.y) < 160 && p.dashCd <= 0) { cmd.dash = true; cmd.mx = move.x; cmd.my = move.y; return cmd; }
+      }
+
+      if (!move) {
+        if (this.unstickT > 0) move = this.unstick;
+        else if (this.dodgeT > 0) move = this.dodge;
+        else if (!p.hasRang) {
+          const f = this.fetchRang(game, enemies, cmd);
+          if (f === 'recall') {
+            cmd.aimHeld = true;
+            return cmd;
+          }
+          if (cmd.dash) return cmd;
+          move = f;
+        }
       }
 
       // --- target & combat --------------------------------------------------
@@ -226,7 +244,6 @@
         if (!this.pendingDeflect) cmd.aim = toT;
 
         if (p.hasRang) {
-          // melee when close
           const reach = p.meleeReach + t.r + 4;
           if (dist < reach && p.meleeCd <= 0 && this.meleeWind < 0 && !p.aiming) {
             this.meleeWind = d.meleeWind * U.rand(0.6, 1.3);
@@ -240,18 +257,23 @@
           }
 
           if (p.aiming) {
+            // keep winding up, tracking the target, then let go
             this.aimT += dt;
             cmd.aimHeld = this.aimT < this.aimDur;
-            const lead = (dist / 750) * d.lead;
+            const lead = (dist / 700) * d.lead;
             const px = t.x + t.vx * lead, py = t.y + t.vy * lead;
             cmd.aim = Math.atan2(py - p.y, px - p.x) + this.aimErr;
-            if (!cmd.aimHeld) this.throwCd = U.rand(d.throwCd[0], d.throwCd[1]);
+            if (!cmd.aimHeld) {
+              this.throwCd = U.rand(d.throwCd[0], d.throwCd[1]);
+              this.releasing = true; // plant feet on release so the throw flies straight
+            }
           } else if (los && dist > 70 && dist < d.maxRange && this.throwCd <= 0 && this.meleeWind < 0 &&
-                     !(p.powerup === 'explosive' && dist < 160)) {
+                     !(p.has('explosive') && dist < 170)) {
             const want = dist + 40;
             let c = 0;
             while (c < 1 && BB.throwRange(c) < want) c += 0.05;
-            this.aimDur = Math.max(0.02, c * BB.TUNE.chargeTime * (1 + U.rand(-1, 1) * d.chargeErr));
+            const hold = U.rand(d.aimHold[0], d.aimHold[1]);
+            this.aimDur = Math.max(c * BB.TUNE.chargeTime, hold) * (1 + U.rand(-1, 1) * d.chargeErr);
             this.aimT = 0;
             this.aimErr = (Math.random() + Math.random() - 1) * d.aimErr;
             cmd.aimHeld = true;
@@ -261,7 +283,7 @@
             const perp = { x: -dy / (dist || 1), y: dx / (dist || 1) };
             const towards = { x: dx / (dist || 1), y: dy / (dist || 1) };
             let keep = t.hasRang ? d.kite : 0;
-            if (p.powerup === 'explosive') keep = Math.max(keep, 180);
+            if (p.has('explosive')) keep = Math.max(keep, 180);
             if (!t.hasRang && dist < 220 && p.dashCd <= 0 && Math.random() < d.rushDash * dt * 3 && los &&
                 this.safeStep(game, towards.x, towards.y, 100)) {
               cmd.dash = true;
@@ -283,7 +305,7 @@
         }
       }
 
-      // --- power-ups / wandering -------------------------------------------
+      // --- power-up books / wandering ----------------------------------------
       if (!move || (p.hasRang && !p.aiming)) {
         const pu = this.nearestPowerUp(game);
         if (pu) {
@@ -293,12 +315,23 @@
         }
       }
       if (!move) {
-        if (!this.wander || Math.hypot(this.wander.x - p.x, this.wander.y - p.y) < 30) {
-          this.wander = arena.randomFloorPoint();
-        }
+        if (!this.wander || Math.hypot(this.wander.x - p.x, this.wander.y - p.y) < 30) this.wander = arena.randomFloorPoint();
         if (this.wander) move = this.goTo(game, this.wander.x, this.wander.y);
       }
 
+      this.applyMove(game, cmd, move);
+      if (this.releasing) {
+        cmd.mx = cmd.my = 0;
+        this.releasing = false;
+      }
+      // a fresh press is needed after catching while the button was held
+      if (p.aimBlock) cmd.aimHeld = false;
+      this.checkStuck(game, dt, cmd);
+      return cmd;
+    }
+
+    applyMove(game, cmd, move) {
+      const p = this.p, d = this.d;
       if (move) {
         let mx = move.x, my = move.y;
         if (d.jitter) {
@@ -311,16 +344,29 @@
         cmd.mx = safe.x;
         cmd.my = safe.y;
       }
-
       // momentum on slippery floor heading for a pit: brake hard
       const fx = p.x + p.vx * 0.35, fy = p.y + p.vy * 0.35;
-      if (arena.isPitAt(fx, fy)) {
+      if (game.arena.isPitAt(fx, fy)) {
         const sp = Math.hypot(p.vx, p.vy) || 1;
         cmd.mx = -p.vx / sp;
         cmd.my = -p.vy / sp;
       }
+    }
 
-      this.checkStuck(game, dt, cmd);
+    // Decoys just wander around looking busy; they never attack.
+    decoyThink(game, dt, cmd) {
+      const p = this.p;
+      this.decoyT -= dt;
+      this.repathT -= dt;
+      let move;
+      if (this.decoyT > 0 && this.decoyDir) {
+        move = this.decoyDir;
+      } else {
+        if (!this.wander || Math.hypot(this.wander.x - p.x, this.wander.y - p.y) < 30) this.wander = game.arena.randomFloorPoint();
+        move = this.wander ? this.goTo(game, this.wander.x, this.wander.y) : null;
+      }
+      if (move) cmd.aim = Math.atan2(move.y, move.x);
+      this.applyMove(game, cmd, move);
       return cmd;
     }
 
@@ -328,13 +374,10 @@
       const p = this.p;
       let best = null, bt = Infinity;
       for (const r of game.rangs) {
-        if (!r.canHurt(p)) continue;
+        if (!r.canHurt(p, game)) continue;
         const rx = p.x - r.x, ry = p.y - r.y;
         const vv = r.vx * r.vx + r.vy * r.vy;
-        if (vv < 400) {
-          if (Math.hypot(rx, ry) < p.r + r.r + 20 && r.state === 'return') return r;
-          continue;
-        }
+        if (vv < 400) continue;
         const tca = (rx * r.vx + ry * r.vy) / vv;
         if (tca < 0 || tca > 0.65) continue;
         const cx = rx - r.vx * tca, cy = ry - r.vy * tca;
@@ -367,7 +410,7 @@
       let best = null, bs = Infinity;
       for (const q of enemies) {
         const dist = Math.hypot(q.x - p.x, q.y - p.y);
-        const visible = !q.inBush || dist < d.detect || q.meleeT > 0 || (q === this.target && dist < d.detect * 2);
+        const visible = !q.hidden || dist < d.detect || q.meleeT > 0 || (q === this.target && dist < d.detect * 2);
         if (!visible) continue;
         let s = dist;
         if (!q.hasRang) s -= 90;
@@ -378,17 +421,28 @@
       return best;
     }
 
-    fetchRang(game, enemies) {
+    // Empty-handed: walk to a dropped boomerang, recall it, or teleport to it.
+    fetchRang(game, enemies, cmd) {
       const p = this.p;
-      const r = p.rang;
-      if (r && r.state === 'dropped') return this.goTo(game, r.x, r.y);
-      if (r && r.state === 'return') {
-        const threat = this.nearestArmed(enemies, 200);
-        if (!threat) {
-          const dx = r.x - p.x, dy = r.y - p.y;
-          const l = Math.hypot(dx, dy) || 1;
-          return { x: dx / l, y: dy / l };
+      const mine = game.rangs.filter((r) => r.owner === p && !r.dead);
+      const dropped = mine.filter((r) => r.state === 'dropped' || r.state === 'recall');
+      const threat = this.nearestArmed(enemies, 240);
+      if (dropped.length) {
+        const r = dropped.reduce((a, b) => (Math.hypot(a.x - p.x, a.y - p.y) < Math.hypot(b.x - p.x, b.y - p.y) ? a : b));
+        const dist = Math.hypot(r.x - p.x, r.y - p.y);
+        if (p.has('teleport') && p.dashCd <= 0 && dist > 200 && !threat && !game.arena.isPitAt(r.x, r.y)) {
+          cmd.dash = true;
+          return null;
         }
+        const allDown = mine.every((x) => x.state === 'dropped' || x.state === 'recall');
+        if (this.wantsRecall && allDown && !threat && dist > 90) return 'recall';
+        return this.goTo(game, r.x, r.y);
+      }
+      const back = mine.find((r) => r.state === 'return');
+      if (back && !threat) {
+        const dx = back.x - p.x, dy = back.y - p.y;
+        const l = Math.hypot(dx, dy) || 1;
+        return { x: dx / l, y: dy / l };
       }
       return this.evade(game, enemies);
     }
@@ -397,7 +451,7 @@
       const p = this.p;
       let best = null, bd = within;
       for (const q of enemies) {
-        if (!q.hasRang) continue;
+        if (!q.hasRang || q.isDecoy) continue;
         const dd = Math.hypot(q.x - p.x, q.y - p.y);
         if (dd < bd) { bd = dd; best = q; }
       }
@@ -439,7 +493,6 @@
         this.repathT = 0.5;
       }
       if (!this.path || !this.path.length) return null;
-      // skip ahead to the furthest waypoint we can walk straight to
       while (this.path.length > 1 && arena.walkClear(p.x, p.y, this.path[1].x, this.path[1].y)) this.path.shift();
       let wp = this.path[0];
       if (Math.hypot(wp.x - p.x, wp.y - p.y) < 10) {
@@ -452,24 +505,28 @@
       return { x: dx / l, y: dy / l };
     }
 
+    dangerAt(game, x, y) {
+      if (game.arena.isPitAt(x, y)) return true;
+      for (const h of game.hazards) {
+        if (h.type === 'fire' && h.owner !== this.p && Math.hypot(h.x - x, h.y - y) < h.r + 10) return true;
+      }
+      return false;
+    }
+
     safeStep(game, dx, dy, dist) {
       const p = this.p;
-      const arena = game.arena;
       for (let s = 12; s <= dist; s += 12) {
         const x = p.x + dx * s, y = p.y + dy * s;
-        if (arena.isPitAt(x, y)) return false;
-        if (arena.solidAt(x, y, p.r * 0.8)) return s > 24;
+        if (this.dangerAt(game, x, y)) return false;
+        if (game.arena.solidAt(x, y, p.r * 0.8)) return s > 24;
       }
       return true;
     }
 
     safeDir(game, mx, my) {
       const p = this.p;
-      const arena = game.arena;
       const ok = (x, y) => {
-        for (const s of [14, 26]) {
-          if (arena.isPitAt(p.x + x * s, p.y + y * s)) return false;
-        }
+        for (const s of [14, 26]) if (this.dangerAt(game, p.x + x * s, p.y + y * s)) return false;
         return true;
       };
       if (ok(mx, my)) return { x: mx, y: my };

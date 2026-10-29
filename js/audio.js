@@ -136,6 +136,10 @@
           this.tone(900, 0.3, { type: 'sine', to: 300, vol: 0.25 });
           this.noise(0.2, { f0: 3000, q: 4, vol: 0.15 });
           break;
+        case 'ignite':
+          this.noise(0.5, { filter: 'lowpass', f0: 600, f1: 2400, vol: 0.35 });
+          this.tone(220, 0.3, { type: 'sawtooth', to: 440, vol: 0.05 });
+          break;
         case 'explode':
           this.noise(0.9, { filter: 'lowpass', f0: 2000, f1: 80, vol: 0.8 });
           this.tone(90, 0.6, { type: 'sine', to: 30, vol: 0.6 });
